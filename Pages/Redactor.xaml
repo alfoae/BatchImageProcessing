@@ -1,0 +1,115 @@
+﻿<Page x:Class="ImageProcessing.Redactor"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:ImageProcessing"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="Redactor">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150"  />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="0"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Column="0" Grid.Row="1" Background="#2b2b2b">
+            <ListBox Name="ThumbnailListBox" Grid.Column="0" Grid.Row="1" Background="#2D2D2D"  BorderThickness="0" FlowDirection="RightToLeft"  ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ThumbnailListBox_SelectionChanged">
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border FlowDirection="LeftToRight" BorderBrush="Red" BorderThickness="2" Margin="5" CornerRadius="3">
+                            <StackPanel>
+                                <TextBlock Text="{Binding}" Foreground="White" FontSize="10" TextWrapping="Wrap" Height="20"/>
+                                <Image Source="{Binding}" Width="80" Height="80" Stretch="UniformToFill"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="FlowDirection" Value="LeftToRight"/>
+                        
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="Gray"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+        </Grid>
+
+        <Border Grid.Column="1" Grid.Row="1" Background="Black">
+            <ScrollViewer x:Name="MyScrollViewer" PreviewMouseWheel="DisplayImage_PreviewMouseWheel" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <Grid x:Name="EditorGrid" Background="Transparent" PreviewMouseWheel="DisplayImage_PreviewMouseWheel">
+
+                    <Grid x:Name="ZoomContainer" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="MainScaleTransform"/>
+                                <TranslateTransform x:Name="MainTranslateTransform"/>
+                            </TransformGroup>
+                        </Grid.RenderTransform>
+
+                        <Image x:Name="DisplayImage" Stretch="Uniform" StretchDirection="Both" RenderOptions.BitmapScalingMode="HighQuality"/>
+
+                        <Canvas x:Name="WatermarksCanvas" Grid.Column="1" Grid.Row="1" Background="Transparent" IsHitTestVisible="True" />
+
+                        <Canvas x:Name="DisplayCanvas" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                            <Border x:Name="CropOverlay" Width="300" Height="300" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#55FFFFFF" BorderBrush="White" BorderThickness="2" Panel.ZIndex="999">
+                                <Border.RenderTransform>
+                                    <TranslateTransform x:Name="CropTranslate"/>
+                                </Border.RenderTransform>
+
+                                <Grid>
+                                    <Rectangle Fill="Transparent" Margin="10" Cursor="SizeAll" MouseLeftButtonDown="CropOverlay_MouseLeftButtonDown" MouseMove="CropOverlay_MouseMove" MouseLeftButtonUp="CropOverlay_MouseLeftButtonUp"/>
+
+                                    <Rectangle Width="10" HorizontalAlignment="Left" Cursor="SizeWE" Fill="Transparent" MouseLeftButtonDown="Handle_MouseDown" MouseMove="Handle_MouseMove" MouseLeftButtonUp="Handle_MouseUp" Tag="Left"/>
+                                    <Rectangle Width="10" HorizontalAlignment="Right" Cursor="SizeWE" Fill="Transparent" MouseLeftButtonDown="Handle_MouseDown" MouseMove="Handle_MouseMove" MouseLeftButtonUp="Handle_MouseUp" Tag="Right"/>
+                                    <Rectangle Height="10" VerticalAlignment="Top" Cursor="SizeNS" Fill="Transparent" MouseLeftButtonDown="Handle_MouseDown" MouseMove="Handle_MouseMove" MouseLeftButtonUp="Handle_MouseUp" Tag="Top"/>
+                                    <Rectangle Height="10" VerticalAlignment="Bottom" Cursor="SizeNS" Fill="Transparent" MouseLeftButtonDown="Handle_MouseDown" MouseMove="Handle_MouseMove" MouseLeftButtonUp="Handle_MouseUp" Tag="Bottom"/>
+
+                                    <Rectangle Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Cursor="SizeNWSE" Fill="Transparent" MouseLeftButtonDown="Handle_MouseDown" MouseMove="Handle_MouseMove" MouseLeftButtonUp="Handle_MouseUp" Tag="TopLeft"/>
+                                    <Rectangle Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Cursor="SizeNWSE" Fill="Transparent" MouseLeftButtonDown="Handle_MouseDown" MouseMove="Handle_MouseMove" MouseLeftButtonUp="Handle_MouseUp" Tag="BottomRight"/>
+                                    <Rectangle Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Cursor="SizeNESW" Fill="Transparent" MouseLeftButtonDown="Handle_MouseDown" MouseMove="Handle_MouseMove" MouseLeftButtonUp="Handle_MouseUp" Tag="TopRight"/>
+                                    <Rectangle Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Bottom" Cursor="SizeNESW" Fill="Transparent" MouseLeftButtonDown="Handle_MouseDown" MouseMove="Handle_MouseMove" MouseLeftButtonUp="Handle_MouseUp" Tag="BottomLeft"/>
+                                </Grid>
+                            </Border>
+                        </Canvas>
+                    </Grid>
+
+                </Grid>
+            </ScrollViewer>
+        </Border>
+
+
+        <StackPanel Grid.Column="0" Grid.Row="2" Background="Black">
+            <Slider x:Name="SlideLabel" Margin="23,6,23,6" Minimum="0" Maximum="100" Value="50" ValueChanged="Slider_ValueChanged"/>
+        </StackPanel>
+
+        <Button Content="-" Name="minus" HorizontalAlignment="Left" Grid.Row="2" VerticalAlignment="Center" Height="30" Width="20" Click="ZoomPlusMinus"/>
+        <Button Content="+" Name="plus" Height="30" Margin="130,0,0,0" Grid.Row="2" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5" Click="ZoomPlusMinus">
+            <Button.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleY="1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </Button.RenderTransform>
+        </Button>
+
+        <TextBlock x:Name="ZoomLabel" Text="100%" Grid.Column="1" Margin="10,7,640,6" Grid.Row="2" />
+
+    </Grid>
+</Page>
