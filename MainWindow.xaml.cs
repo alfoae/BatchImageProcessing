@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Windows;
+
 using Path = System.IO.Path;
 
 
@@ -109,7 +110,6 @@ namespace ImageProcessing
             progressWin.Show();
 
             int processedCount = 0;
-            bool wasCanceled = false;
 
             try
             {
@@ -125,19 +125,13 @@ namespace ImageProcessing
 
                     Parallel.ForEach(files, options, filePath =>
                     {
-                        if (cts.Token.IsCancellationRequested)
-                        {
-                            wasCanceled = true;
-                            return;
-                        }
+                        if (cts.Token.IsCancellationRequested) return;
 
                         try
                         {
-                            using Bitmap originalBitmap =
-                                new Bitmap(filePath);
+                            using Bitmap originalBitmap = new Bitmap(filePath);
 
-                            Int32Rect cropRect =
-                                ImageService.GetCropForFile(filePath);
+                            Int32Rect cropRect = ImageService.GetCropForFile(filePath);
 
                             if (cropRect == Int32Rect.Empty || cropRect.Width <= 0 || cropRect.Height <= 0)
                             {
@@ -165,8 +159,7 @@ namespace ImageProcessing
                                 y = 0;
                             }
 
-                            if (x >= originalBitmap.Width ||
-                                y >= originalBitmap.Height)
+                            if (x >= originalBitmap.Width || y >= originalBitmap.Height)
                             {
                                 return;
                             }
@@ -225,7 +218,7 @@ namespace ImageProcessing
                                             new float[] {0,1,0,0,0},
                                             new float[] {0,0,1,0,0},
                                             new float[] {0,0,0,opacityAlpha,0},
-                                            new float[] {0,0,0,0,1}
+                                             new float[] {0,0,0,0,1}
                                         };
 
                                         ColorMatrix colorMatrix = new ColorMatrix(matrixItems);
@@ -284,8 +277,7 @@ namespace ImageProcessing
 
                                     gResize.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
 
-                                    gResize.DrawImage(croppedBitmap,new System.Drawing.Rectangle
-                                        (
+                                    gResize.DrawImage(croppedBitmap, new System.Drawing.Rectangle(
                                             0,
                                             0,
                                             finalWidth,
@@ -312,9 +304,7 @@ namespace ImageProcessing
                                 _ => ".png"
                             };
 
-                            string outPath = Path.Combine(
-                                outputFolder,
-                                Path.ChangeExtension(Path.GetFileName(filePath), ext));
+                            string outPath = Path.Combine(outputFolder, Path.ChangeExtension(Path.GetFileName(filePath), ext));
 
                             ImageFormat saveFormat = ext switch
                             {
@@ -353,37 +343,36 @@ namespace ImageProcessing
 
                 progressWin.Close();
 
-                if (wasCanceled)
-                {
-                    string taskName = string.IsNullOrWhiteSpace(Properties.Settings.Default.RedactorName) ? $"Num{HistoryService.Tasks.Count + 1}" : Properties.Settings.Default.RedactorName;
+                string taskName = string.IsNullOrWhiteSpace(Properties.Settings.Default.RedactorName) ? $"Num{HistoryService.Tasks.Count + 1}" : Properties.Settings.Default.RedactorName;
 
-                    HistoryService.AddTask(taskName, "Canceled", processedCount);
+                HistoryService.AddTask(taskName, "Completed", files.Length);
 
-                    MessageBox.Show(
-                        $"Процес було перервано.\nОброблено {processedCount} з {files.Length} фото.",
-                        "Відміна",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-                }
-                else
-                {
-                    string taskName = string.IsNullOrWhiteSpace(Properties.Settings.Default.RedactorName) ? $"Num{HistoryService.Tasks.Count + 1}" : Properties.Settings.Default.RedactorName;
+                MessageBox.Show(
+                    $"Готово! Всі {files.Length} фото обрізано.",
+                    "Успіх",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (OperationCanceledException)
+            {
+                if (progressWin.IsVisible)
+                    progressWin.Close();
 
-                    HistoryService.AddTask(taskName, "Completed", files.Length);
+                string taskName =
+                    string.IsNullOrWhiteSpace(Properties.Settings.Default.RedactorName) ? $"Num{HistoryService.Tasks.Count + 1}" : Properties.Settings.Default.RedactorName;
 
-                    MessageBox.Show(
-                        $"Готово! Всі {files.Length} фото обрізано.",
-                        "Успіх",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-                }
+                HistoryService.AddTask(taskName, "Canceled", processedCount);
+
+                MessageBox.Show(
+                    $"Процес було перервано.\nОброблено {processedCount} з {files.Length} фото.",
+                    "Відміна",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
             }
             catch (Exception ex)
             {
                 if (progressWin.IsVisible)
-                {
                     progressWin.Close();
-                }
 
                 MessageBox.Show(
                     ex.ToString(),
