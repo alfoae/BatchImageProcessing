@@ -967,38 +967,49 @@ namespace ImageProcessing
             if (currentLayers != null && selectedIndex >= 0 && selectedIndex < currentLayers.Count)
             {
                 var activeLayer = currentLayers[selectedIndex];
-                int oldGlobalId = activeLayer.Id;
-                string currentPhotoPath = GetCurrentPhotoPath();
+
+                if (!activeLayer.IsGlobal) return;
+
+                string originPath = !string.IsNullOrEmpty(activeLayer.OriginalPhotoPath)
+                    ? activeLayer.OriginalPhotoPath
+                    : GetCurrentPhotoPath();
+
+                int targetGlobalOrder = activeLayer.GlobalOrder;
+
                 var allPhotos = GetAllImageFiles();
 
                 if (allPhotos != null)
                 {
                     foreach (var photoPath in allPhotos)
                     {
-                        if (photoPath == currentPhotoPath) continue;
+                        if (string.IsNullOrEmpty(photoPath)) continue;
 
-                        if (ImageWatermarks.TryGetValue(photoPath, out var targetLayers))
+                        if (photoPath == originPath) continue;
+
+                        if (!ImageWatermarks.TryGetValue(photoPath, out var targetLayers)) continue;
+
+                        var copy = targetLayers.FirstOrDefault(l =>
+                            l.IsGlobal && l.GlobalOrder == targetGlobalOrder && l.OriginalPhotoPath == originPath);
+
+                        if (copy != null)
                         {
-                            var copy = targetLayers.FirstOrDefault(l => l.Id == oldGlobalId);
-                            if (copy != null && copy.OriginalPhotoPath == currentPhotoPath)
-                            {
-                                targetLayers.Remove(copy);
-                            }
-                            SortAndReorderLayers(targetLayers);
+                            targetLayers.Remove(copy);
                         }
+
+                        SortAndReorderLayers(targetLayers);
                     }
                 }
 
                 activeLayer.IsGlobal = false;
                 activeLayer.GlobalOrder = 0;
-
                 activeLayer.Id = GenerateNextAvailableLocalId(currentLayers);
 
                 SortAndReorderLayers(currentLayers);
                 RefreshWatermarkComboBox();
-
-                int newIndex = currentLayers.FindIndex(l => l.Id == activeLayer.Id);
-                if (newIndex >= 0) MyComboBoxN1.SelectedIndex = newIndex;
+                SyncUIWithSelectedWatermark();
+                UpdateWatermarkUIFromSelection();
+                NotifyWatermarksChanged();
+                RenderPreviewWatermarks();
             }
         }
 
@@ -1329,10 +1340,7 @@ namespace ImageProcessing
             {
                 if (ImageWatermarks.TryGetValue(photoPath, out var targetLayers))
                 {
-                    var copy = targetLayers.FirstOrDefault(l =>
-                        l.Id == activeLayer.Id &&
-                        l.IsGlobal &&
-                        l.OriginalPhotoPath == activeLayer.OriginalPhotoPath);
+                    var copy = targetLayers.FirstOrDefault(l => l.Id == activeLayer.Id && l.IsGlobal && l.OriginalPhotoPath == activeLayer.OriginalPhotoPath);
 
                     if (copy != null)
                     {

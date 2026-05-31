@@ -16,7 +16,7 @@ public static class ImageService
     private static List<string> _imageFiles = new List<string>();
     private static int _currentIndex = -1;
     public static int CurrentIndex;
-    private static readonly string[] _extensions = { ".jpg", ".jpeg", ".png", ".bmp"};
+    private static readonly string[] _extensions = { ".jpg", ".jpeg", ".png", ".bmp" };
 
     private static readonly Dictionary<string, Int32Rect> _imageCrops = new Dictionary<string, Int32Rect>();
 
@@ -46,6 +46,37 @@ public static class ImageService
     private static readonly Dictionary<string, string> _imageAlignmentType = new Dictionary<string, string>();
 
     public static event Action? CurrentAlignmentChanged;
+
+    private static Int32Rect CenteredToSystem(Int32Rect centered, int imgW, int imgH)
+    {
+        int w = centered.Width;
+        int h = centered.Height;
+        double halfImgW = imgW / 2.0;
+        double halfImgH = imgH / 2.0;
+
+        int sysX = (int)Math.Round((centered.X + halfImgW) - w / 2.0);
+        int sysY = (int)Math.Round((centered.Y + halfImgH) - h / 2.0);
+
+        if (sysX < 0) sysX = 0;
+        if (sysY < 0) sysY = 0;
+        if (sysX + w > imgW) sysX = Math.Max(0, imgW - w);
+        if (sysY + h > imgH) sysY = Math.Max(0, imgH - h);
+
+        return new Int32Rect(sysX, sysY, w, h);
+    }
+
+    private static Int32Rect SystemToCentered(Int32Rect system, int imgW, int imgH)
+    {
+        int w = system.Width;
+        int h = system.Height;
+        double halfImgW = imgW / 2.0;
+        double halfImgH = imgH / 2.0;
+
+        int userX = (int)Math.Round((system.X + w / 2.0) - halfImgW);
+        int userY = (int)Math.Round((system.Y + h / 2.0) - halfImgH);
+
+        return new Int32Rect(userX, userY, w, h);
+    }
 
     public static void RecalculateCropAlignment()
     {
@@ -152,7 +183,7 @@ public static class ImageService
             string folderPath = Settings.Default.LastSelectedPathEnter;
             if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath)) return;
 
-            var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp"};
+            var extensions = new[] { ".jpg", ".jpeg", ".png", ".bmp" };
             var firstFile = Directory.EnumerateFiles(folderPath)
                 .FirstOrDefault(f => extensions.Contains(Path.GetExtension(f).ToLower()));
 
@@ -169,8 +200,8 @@ public static class ImageService
                 ApplyZoom(displayImage, 100.0);
             }
         }
-        catch 
-        { 
+        catch
+        {
 
         }
     }
@@ -304,9 +335,6 @@ public static class ImageService
                 int w = IsGlobalCropSize ? GlobalWidth : crop.Width;
                 int h = IsGlobalCropSize ? GlobalHeight : crop.Height;
 
-                double halfImgW = CurrentBitmap.PixelWidth / 2.0;
-                double halfImgH = CurrentBitmap.PixelHeight / 2.0;
-
                 if (IsGlobalCropPosition)
                 {
                     int gx = GlobalX;
@@ -314,8 +342,8 @@ public static class ImageService
                     return new Int32Rect(gx, gy, w, h);
                 }
 
-                int userX = (int)Math.Round((crop.X + w / 2.0) - halfImgW);
-                int userY = (int)Math.Round((crop.Y + h / 2.0) - halfImgH);
+                int userX = crop.X;
+                int userY = crop.Y;
 
                 return new Int32Rect(userX, userY, w, h);
             }
@@ -328,16 +356,10 @@ public static class ImageService
             {
                 string currentFile = _imageFiles[_currentIndex];
 
-                double halfImgW = CurrentBitmap.PixelWidth / 2.0;
-                double halfImgH = CurrentBitmap.PixelHeight / 2.0;
-
                 int userX = value.X;
                 int userY = value.Y;
 
-                int sysX = (int)Math.Round((userX + halfImgW) - value.Width / 2.0);
-                int sysY = (int)Math.Round((userY + halfImgH) - value.Height / 2.0);
-
-                var finalCrop = new Int32Rect(sysX, sysY, value.Width, value.Height);
+                var finalCrop = new Int32Rect(userX, userY, value.Width, value.Height);
                 _imageCrops[currentFile] = finalCrop;
 
                 if (IsGlobalCropSize)
@@ -362,21 +384,25 @@ public static class ImageService
         var keys = _imageCrops.Keys.ToList();
         foreach (var file in keys)
         {
-            
-            int imgW, imgH;
-            using (var bmp = new System.Drawing.Bitmap(file))
+            try
             {
-                imgW = bmp.Width;
-                imgH = bmp.Height;
+                int imgW, imgH;
+                using (var bmp = new System.Drawing.Bitmap(file))
+                {
+                    imgW = bmp.Width;
+                    imgH = bmp.Height;
+                }
+
+                var crop = _imageCrops[file];
+                crop.Width = GlobalWidth;
+                crop.Height = GlobalHeight;
+
+                crop.X = GlobalX;
+                crop.Y = GlobalY;
+
+                _imageCrops[file] = crop;
             }
-
-            var crop = _imageCrops[file];
-            crop.Width = GlobalWidth;
-            crop.Height = GlobalHeight;
-
-            crop.X = (int)Math.Round(imgW / 2.0 + GlobalX - crop.Width / 2.0);
-            crop.Y = (int)Math.Round(imgH / 2.0 + GlobalY - crop.Height / 2.0);
-            _imageCrops[file] = crop;
+            catch { }
         }
     }
 
@@ -387,15 +413,9 @@ public static class ImageService
         {
             try
             {
-                int imgW, imgH;
-                using (var bmp = new System.Drawing.Bitmap(file))
-                {
-                    imgW = bmp.Width;
-                    imgH = bmp.Height;
-                }
                 var crop = _imageCrops[file];
-                crop.X = (int)Math.Round(imgW / 2.0 + GlobalX - crop.Width / 2.0);
-                crop.Y = (int)Math.Round(imgH / 2.0 + GlobalY - crop.Height / 2.0);
+                crop.X = GlobalX;
+                crop.Y = GlobalY;
                 _imageCrops[file] = crop;
             }
             catch { }
@@ -406,7 +426,7 @@ public static class ImageService
     {
         if (string.IsNullOrEmpty(filePath)) return Int32Rect.Empty;
 
-        bool hasSaved = _imageCrops.TryGetValue(filePath, out Int32Rect crop);
+        bool hasSaved = _imageCrops.TryGetValue(filePath, out Int32Rect centeredCrop);
 
         if (!hasSaved && !IsGlobalCropSize && !IsGlobalCropPosition)
         {
@@ -422,36 +442,30 @@ public static class ImageService
         }
         catch { return Int32Rect.Empty; }
 
-        int w = IsGlobalCropSize ? GlobalWidth : (hasSaved ? crop.Width : GlobalWidth);
-        int h = IsGlobalCropSize ? GlobalHeight : (hasSaved ? crop.Height : GlobalHeight);
+        int w = IsGlobalCropSize ? GlobalWidth : (hasSaved ? centeredCrop.Width : GlobalWidth);
+        int h = IsGlobalCropSize ? GlobalHeight : (hasSaved ? centeredCrop.Height : GlobalHeight);
 
-        int x, y;
         if (IsGlobalCropPosition)
         {
-            x = (int)Math.Round(imgW / 2.0 + GlobalX - w / 2.0);
-            y = (int)Math.Round(imgH / 2.0 + GlobalY - h / 2.0);
-        }
-        else if (hasSaved && IsGlobalCropSize)
-        {
-            double oldCenterX = crop.X + crop.Width / 2.0;
-            double oldCenterY = crop.Y + crop.Height / 2.0;
-            double userX = oldCenterX - imgW / 2.0;
-            double userY = oldCenterY - imgH / 2.0;
-            x = (int)Math.Round(imgW / 2.0 + userX - w / 2.0);
-            y = (int)Math.Round(imgH / 2.0 + userY - h / 2.0);
+            int sysX = (int)Math.Round(imgW / 2.0 + GlobalX - w / 2.0);
+            int sysY = (int)Math.Round(imgH / 2.0 + GlobalY - h / 2.0);
+            if (sysX < 0) sysX = 0;
+            if (sysY < 0) sysY = 0;
+            if (sysX + w > imgW) sysX = Math.Max(0, imgW - w);
+            if (sysY + h > imgH) sysY = Math.Max(0, imgH - h);
+            return new Int32Rect(sysX, sysY, w, h);
         }
         else if (hasSaved)
         {
-            x = crop.X;
-            y = crop.Y;
+            var centered = new Int32Rect(centeredCrop.X, centeredCrop.Y, w, h);
+            return CenteredToSystem(centered, imgW, imgH);
         }
         else
         {
-            x = (int)Math.Round((imgW - w) / 2.0);
-            y = (int)Math.Round((imgH - h) / 2.0);
+            int sysX = (int)Math.Round((imgW - w) / 2.0);
+            int sysY = (int)Math.Round((imgH - h) / 2.0);
+            return new Int32Rect(sysX, sysY, w, h);
         }
-
-        return new Int32Rect(x, y, w, h);
     }
 
     public static bool IsCurrentAlignmentEnabled
@@ -508,29 +522,6 @@ public static class ImageService
         }
     }
 
-    private static void ApplyAlignmentConstraints(string file, ref int x, ref int y)
-    {
-        if (_imageAlignmentEnabled.TryGetValue(file, out bool enabled) && enabled)
-        {
-            if (_imageAlignmentType.TryGetValue(file, out string type))
-            {
-                if (type == "Центру")
-                {
-                    x = 0;
-                    y = 0;
-                }
-                else if (type == "Висоті")
-                {
-                    x = 0;
-                }
-                else if (type == "Ширині")
-                {
-                    y = 0;
-                }
-            }
-        }
-    }
-
     public static void SelectNextImage()
     {
         if (_imageFiles.Count == 0) return;
@@ -567,7 +558,7 @@ public static class ImageService
     public static WatermarkLayer? SelectedWatermark { get; set; }
     public static bool IsWatermarkAlignmentEnabled { get; set; } = false;
     public static bool IsAllWatermarksOpacityMode { get; set; } = false;
-    public static int GlobalOrderCounter { get; set; } = 0;     
+    public static int GlobalOrderCounter { get; set; } = 0;
 
     public static BitmapImage? GetWatermarkBitmap()
     {
@@ -667,7 +658,7 @@ public static class ImageService
 
     public static List<WatermarkLayer> GetCurrentPhotoLayers()
     {
-        string currentFile = _imageFiles.ElementAtOrDefault(CurrentIndex) ?? string.Empty;
+        string currentFile = _image_files_safe();
         if (string.IsNullOrEmpty(currentFile)) return new List<WatermarkLayer>();
 
         if (!ImageWatermarks.ContainsKey(currentFile))
@@ -676,12 +667,17 @@ public static class ImageService
         return ImageWatermarks[currentFile];
     }
 
+    private static string _image_files_safe()
+    {
+        return _imageFiles.ElementAtOrDefault(CurrentIndex) ?? string.Empty;
+    }
+
     public static WatermarkLayer AddNewWatermark(string currentWatermarkPath)
     {
         var layers = GetCurrentPhotoLayers();
         int newId = GenerateNextLocalId(layers);
 
-        string currentFile = _imageFiles.ElementAtOrDefault(CurrentIndex) ?? string.Empty;
+        string currentFile = _image_files_safe();
 
         var newLayer = new WatermarkLayer
         {
@@ -733,7 +729,8 @@ public static class ImageService
                     sysX = (int)Math.Round((imgW - w) / 2.0);
                     sysY = (int)Math.Round((imgH - h) / 2.0);
                 }
-                _imageCrops[filePath] = new Int32Rect(sysX, sysY, w, h);
+                var centered = SystemToCentered(new Int32Rect(sysX, sysY, w, h), imgW, imgH);
+                _imageCrops[filePath] = centered;
             }
             catch { }
         }
