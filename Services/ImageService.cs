@@ -239,6 +239,8 @@ public static class ImageService
                 _thumbnailList.SelectedIndex = CurrentIndex;
             }
         }
+
+        PreloadAllCrops();
     }
 
     public static void LoadImageByIndex(int index)
@@ -309,14 +311,11 @@ public static class ImageService
                 {
                     int gx = GlobalX;
                     int gy = GlobalY;
-                    ApplyAlignmentConstraints(currentFile, ref gx, ref gy);
                     return new Int32Rect(gx, gy, w, h);
                 }
 
                 int userX = (int)Math.Round((crop.X + w / 2.0) - halfImgW);
                 int userY = (int)Math.Round((crop.Y + h / 2.0) - halfImgH);
-
-                ApplyAlignmentConstraints(currentFile, ref userX, ref userY);
 
                 return new Int32Rect(userX, userY, w, h);
             }
@@ -334,8 +333,6 @@ public static class ImageService
 
                 int userX = value.X;
                 int userY = value.Y;
-
-                ApplyAlignmentConstraints(currentFile, ref userX, ref userY);
 
                 int sysX = (int)Math.Round((userX + halfImgW) - value.Width / 2.0);
                 int sysY = (int)Math.Round((userY + halfImgH) - value.Height / 2.0);
@@ -365,9 +362,20 @@ public static class ImageService
         var keys = _imageCrops.Keys.ToList();
         foreach (var file in keys)
         {
+            
+            int imgW, imgH;
+            using (var bmp = new System.Drawing.Bitmap(file))
+            {
+                imgW = bmp.Width;
+                imgH = bmp.Height;
+            }
+
             var crop = _imageCrops[file];
             crop.Width = GlobalWidth;
             crop.Height = GlobalHeight;
+
+            crop.X = (int)Math.Round(imgW / 2.0 + GlobalX - crop.Width / 2.0);
+            crop.Y = (int)Math.Round(imgH / 2.0 + GlobalY - crop.Height / 2.0);
             _imageCrops[file] = crop;
         }
     }
@@ -377,10 +385,20 @@ public static class ImageService
         var keys = _imageCrops.Keys.ToList();
         foreach (var file in keys)
         {
-            var crop = _imageCrops[file];
-            crop.X = GlobalX;
-            crop.Y = GlobalY;
-            _imageCrops[file] = crop;
+            try
+            {
+                int imgW, imgH;
+                using (var bmp = new System.Drawing.Bitmap(file))
+                {
+                    imgW = bmp.Width;
+                    imgH = bmp.Height;
+                }
+                var crop = _imageCrops[file];
+                crop.X = (int)Math.Round(imgW / 2.0 + GlobalX - crop.Width / 2.0);
+                crop.Y = (int)Math.Round(imgH / 2.0 + GlobalY - crop.Height / 2.0);
+                _imageCrops[file] = crop;
+            }
+            catch { }
         }
     }
 
@@ -412,6 +430,15 @@ public static class ImageService
         {
             x = (int)Math.Round(imgW / 2.0 + GlobalX - w / 2.0);
             y = (int)Math.Round(imgH / 2.0 + GlobalY - h / 2.0);
+        }
+        else if (hasSaved && IsGlobalCropSize)
+        {
+            double oldCenterX = crop.X + crop.Width / 2.0;
+            double oldCenterY = crop.Y + crop.Height / 2.0;
+            double userX = oldCenterX - imgW / 2.0;
+            double userY = oldCenterY - imgH / 2.0;
+            x = (int)Math.Round(imgW / 2.0 + userX - w / 2.0);
+            y = (int)Math.Round(imgH / 2.0 + userY - h / 2.0);
         }
         else if (hasSaved)
         {
@@ -678,6 +705,38 @@ public static class ImageService
     public static List<string> GetAllImageFiles()
     {
         return _imageFiles;
+    }
+
+    public static void PreloadAllCrops()
+    {
+        foreach (var filePath in _imageFiles)
+        {
+            if (_imageCrops.ContainsKey(filePath)) continue;
+            try
+            {
+                int imgW, imgH;
+                using (var bmp = new System.Drawing.Bitmap(filePath))
+                {
+                    imgW = bmp.Width;
+                    imgH = bmp.Height;
+                }
+                int w = IsGlobalCropSize ? GlobalWidth : Math.Min(GlobalWidth, imgW);
+                int h = IsGlobalCropSize ? GlobalHeight : Math.Min(GlobalHeight, imgH);
+                int sysX, sysY;
+                if (IsGlobalCropPosition)
+                {
+                    sysX = (int)Math.Round(imgW / 2.0 + GlobalX - w / 2.0);
+                    sysY = (int)Math.Round(imgH / 2.0 + GlobalY - h / 2.0);
+                }
+                else
+                {
+                    sysX = (int)Math.Round((imgW - w) / 2.0);
+                    sysY = (int)Math.Round((imgH - h) / 2.0);
+                }
+                _imageCrops[filePath] = new Int32Rect(sysX, sysY, w, h);
+            }
+            catch { }
+        }
     }
 
     public static void SyncWatermarkSizes(WatermarkLayer baseLayer, bool isOneSizeOn, bool isAllWatermarksMode)

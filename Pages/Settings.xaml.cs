@@ -267,8 +267,7 @@ namespace ImageProcessing
             if (!int.TryParse(WidthBox.Text, out int w)) w = 100;
             if (!int.TryParse(HeightBox.Text, out int h)) h = 100;
 
-            double ratio = Math.Min(SquareBorder.ActualWidth / CurrentBitmap.PixelWidth,
-                                    SquareBorder.ActualHeight / CurrentBitmap.PixelHeight);
+            double ratio = Math.Min(SquareBorder.ActualWidth / CurrentBitmap.PixelWidth, SquareBorder.ActualHeight / CurrentBitmap.PixelHeight);
 
             double renderedWidth = CurrentBitmap.PixelWidth * ratio;
             double renderedHeight = CurrentBitmap.PixelHeight * ratio;
@@ -323,6 +322,7 @@ namespace ImageProcessing
             }
             if (sender is TextBox tb && tb.Text != "-" && tb.Text != "")
             {
+                
                 UpdatePreviewVisuals();
             }
         }
@@ -425,9 +425,6 @@ namespace ImageProcessing
 
                 CopyGlobalSizeToAllImages();
             }
-
-            _isInitializing = true;
-            _isInitializing = false;
 
             UpdatePreviewVisuals();
         }
@@ -643,6 +640,14 @@ namespace ImageProcessing
             ApplyToAll.IsChecked = profile.ApplyToAll;
 
             MessageBox.Show("Профіль завантажено");
+        }
+
+        private void ApplyProfileByName(string profileName)
+        {
+            var profile = ProfileService.Profiles.FirstOrDefault(x => x.Name == profileName);
+            if (profile == null) return;
+            ImageService.CurrentCrop = new Int32Rect(
+                profile.CropX, profile.CropY, profile.CropWidth, profile.CropHeight);
         }
 
         private void DeleteProfile_Click(object sender, RoutedEventArgs e)
@@ -1885,7 +1890,7 @@ namespace ImageProcessing
 
 
         private void UsersNewName_TextChanged(object sender, TextChangedEventArgs e) { }
-        private void UsersNewPassword_TextChanged(object sender, TextChangedEventArgs e) { }
+        private void UsersNewPassword_TextChanged(object sender, RoutedEventArgs e) { }
 
 
         private void SelectChanges_Click(object sender, RoutedEventArgs e)
@@ -1897,7 +1902,7 @@ namespace ImageProcessing
             }
 
             string newName = UsersNewName.Text.Trim();
-            string newPassword = UsersNewPassword.Text.Trim();
+            string newPassword = UsersNewPassword.Password.Trim();
 
             if (string.IsNullOrWhiteSpace(newName) && string.IsNullOrWhiteSpace(newPassword))
             {
@@ -1932,7 +1937,7 @@ namespace ImageProcessing
             MessageBox.Show("Дані акаунту оновлено.", "Готово", MessageBoxButton.OK, MessageBoxImage.Information);
 
             UsersNewName.Text = string.Empty;
-            UsersNewPassword.Text = string.Empty;
+            UsersNewPassword.Password = string.Empty;
         }
 
     }

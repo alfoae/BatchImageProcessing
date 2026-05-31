@@ -936,7 +936,7 @@
                             </Border>
 
                             <Border Grid.Column="2" Background="#f9f9f9" Margin="4,3,-4,3" >
-                                <TextBox x:Name="UsersNewPassword" Grid.Row="0" Text="Пароль" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Padding="2" TextChanged="UsersNewPassword_TextChanged"/>
+                                <PasswordBox x:Name="UsersNewPassword" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Padding="2" PasswordChanged="UsersNewPassword_TextChanged"/>
                             </Border>
 
                             <Button x:Name="SelectChanges" Grid.Column="3" Content="Change" Margin="4,4,2,4" Click="SelectChanges_Click"/>
