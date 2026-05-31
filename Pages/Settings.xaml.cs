@@ -1948,5 +1948,9 @@ namespace ImageProcessing
             UsersNewPassword.Password = string.Empty;
         }
 
+        private void OneAlignmentCheck_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

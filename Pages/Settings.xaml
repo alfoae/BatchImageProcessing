@@ -309,7 +309,7 @@
                                     <ColumnDefinition Width="55" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <ToggleButton x:Name="OneAlignmentCheck" Grid.Column="0" Content="ON" Margin="3,3,1.5,3" Click="OneAlignmentCheck_Click"/>
+                                <ToggleButton x:Name="OneAlignmentCheck" Grid.Column="0" Content="ON" Margin="3,3,1.5,3" Click="OneAlignmentCheck_Click" Checked="OneAlignmentCheck_Checked"/>
 
                                 <TextBlock Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#f9f9f9" Margin=" 3,3,3,4" Padding="2"><Run Text="Одне вирівнювання для вс"/><Run Language="uk-ua" Text="іх"/></TextBlock>
                             </Grid>

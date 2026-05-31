@@ -82,6 +82,10 @@ namespace ImageProcessing
         private string _currentResizeDirection = "";
         private double _startCropX;
         private double _startCropY;
+        private bool _isDraggingWatermark = false;
+        private Point _startMousePosition;
+        private double _startWatermarkX;
+        private double _startWatermarkY;
 
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -397,11 +401,11 @@ namespace ImageProcessing
         private void UpdateCropOverlayFromCurrent()
         {
             Rect rect = GetScreenRect(
-    CurrentCrop.X,
-    CurrentCrop.Y,
-    CurrentCrop.Width,
-    CurrentCrop.Height
-);
+                CurrentCrop.X,
+                CurrentCrop.Y,
+                CurrentCrop.Width,
+                CurrentCrop.Height
+            );
 
             CropOverlay.Width = rect.Width;
             CropOverlay.Height = rect.Height;

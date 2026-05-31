@@ -775,12 +775,20 @@ public static class ImageService
 
                 if (layer.Id == baseLayer.Id)
                 {
-                    layer.X = baseLayer.X;
-                    layer.Y = baseLayer.Y;
-                    layer.IsAlignmentEnabled = baseLayer.IsAlignmentEnabled;
+                    layer.UseAlignment = baseLayer.UseAlignment;
+                    layer.AlignmentIndex = baseLayer.AlignmentIndex;
                     layer.SelectedAlignment = baseLayer.SelectedAlignment;
 
-                    ApplyWatermarkAlignment(layer, isDragging: false, photoPath: photoPath);
+                    if (baseLayer.UseAlignment)
+                    {
+                        ApplyWatermarkAlignment(layer, isDragging: false, photoPath: photoPath);
+                    }
+                    else
+                    {
+                        layer.X = baseLayer.X;
+                        layer.Y = baseLayer.Y;
+                        ApplyWatermarkAlignment(layer, isDragging: false, photoPath: photoPath);
+                    }
                 }
             }
         }
