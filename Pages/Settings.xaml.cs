@@ -592,7 +592,6 @@ namespace ImageProcessing
 
                 CopyGlobalPositionToAllImages();
 
-                // Re-enable alignment buttons
                 ApplyAlignCurrentBtn.IsEnabled = true;
                 ApplyAlignAllBtn.IsEnabled = true;
             }
@@ -1913,7 +1912,7 @@ namespace ImageProcessing
             }
 
             var confirm = MessageBox.Show($"Видалити користувача \"{login}\"?", "Підтвердження", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
+            
             if (confirm != MessageBoxResult.Yes) return;
 
             var user = AuthService.Users.FirstOrDefault(u => u.Login == login);

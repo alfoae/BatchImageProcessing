@@ -1,9 +1,10 @@
-﻿using ImageProcessing.Pages;
+using ImageProcessing.Pages;
 using ImageProcessing.Services;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Windows;
+using ImageMagick;
 
 using Path = System.IO.Path;
 
@@ -296,24 +297,46 @@ namespace ImageProcessing
                             string ext = format switch
                             {
                                 var f when f.Contains("JPEG") || f.Contains("JPG") => ".jpg",
-
                                 var f when f.Contains("PNG") => ".png",
-
                                 var f when f.Contains("BMP") => ".bmp",
-
+                                var f when f.Contains("WEBP") => ".webp",
+                                var f when f.Contains("AVIF") => ".avif",
                                 _ => ".png"
                             };
 
                             string outPath = Path.Combine(outputFolder, Path.ChangeExtension(Path.GetFileName(filePath), ext));
 
-                            ImageFormat saveFormat = ext switch
-                            {
-                                ".jpg" => ImageFormat.Jpeg,
-                                ".bmp" => ImageFormat.Bmp,
-                                _ => ImageFormat.Png
-                            };
+                            bool useMagick = ext is ".webp" or ".avif";
 
-                            finalBitmap.Save(outPath, saveFormat);
+                            if (useMagick)
+                            {
+                                using MemoryStream ms = new MemoryStream();
+                                ImageFormat tmpFmt = ImageFormat.Png;
+                                finalBitmap.Save(ms, tmpFmt);
+                                ms.Position = 0;
+
+                                MagickImage magickImg = new MagickImage(ms);
+
+                                MagickFormat magickFormat = ext switch
+                                {
+                                    ".webp" => MagickFormat.WebP,
+                                    ".avif" => MagickFormat.Avif,
+                                    _ => MagickFormat.Png
+                                };
+
+                                magickImg.Format = magickFormat;
+                                magickImg.Write(outPath);
+                            }
+                            else
+                            {
+                                ImageFormat saveFormat = ext switch
+                                {
+                                    ".jpg" => ImageFormat.Jpeg,
+                                    ".bmp" => ImageFormat.Bmp,
+                                    _ => ImageFormat.Png
+                                };
+                                finalBitmap.Save(outPath, saveFormat);
+                            }
 
                             if (isResized)
                             {
