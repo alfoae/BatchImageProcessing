@@ -13,12 +13,12 @@ public static class ImageService
     public static event Action<Int32Rect>? CurrentCropChanged;
     public static BitmapImage? CurrentBitmap { get; private set; }
     public static ListBox? _thumbnailList;
-    private static List<string> _imageFiles = new List<string>();
+    public static List<string> _imageFiles = new List<string>();
     private static int _currentIndex = -1;
     public static int CurrentIndex;
     private static readonly string[] _extensions = { ".jpg", ".jpeg", ".png", ".bmp" };
 
-    private static readonly Dictionary<string, Int32Rect> _imageCrops = new Dictionary<string, Int32Rect>();
+    public static Dictionary<string, Int32Rect> _imageCrops = new Dictionary<string, Int32Rect>();
 
     public static string SelectedQuality { get; set; } = "1080p";
     public static string SelectedFormat { get; set; } = "PNG";
@@ -90,8 +90,6 @@ public static class ImageService
 
         if (w <= 0) w = 100;
         if (h <= 0) h = 100;
-        if (w > imgW) w = imgW;
-        if (h > imgH) h = imgH;
 
         int x = 0;
         int y = 0;
@@ -134,13 +132,18 @@ public static class ImageService
                 x = (imgW - w) / 2;
                 y = (imgH - h) / 2;
                 break;
+            default:
+                x = 0;
+                y = 0;
+                break;
         }
 
-        int maxXOffset = (imgW - w) / 2;
+        int maxXOffset = Math.Abs((imgW - w) / 2);
+        int maxYOffset = Math.Abs((imgH - h) / 2);
+
         if (x > maxXOffset) x = maxXOffset;
         if (x < -maxXOffset) x = -maxXOffset;
 
-        int maxYOffset = (imgH - h) / 2;
         if (y > maxYOffset) y = maxYOffset;
         if (y < -maxYOffset) y = -maxYOffset;
 

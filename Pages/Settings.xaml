@@ -316,19 +316,21 @@
 
                             <Grid Grid.Row="6">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="55" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="110" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
-                                <ToggleButton x:Name="AlignmentSwitch" Grid.Column="0" Content="OFF" Margin="3,3,1.5,3" Click="AlignmentSwitch_Click"/>
+                                <Button x:Name="ApplyAlignCurrentBtn" Grid.Column="0" Content="Поточна" Margin="3,3,1.5,3" Click="ApplyAlignCurrentBtn_Click"/>
+                                <Button x:Name="ApplyAlignAllBtn"     Grid.Column="1" Content="Для всіх" Margin="1.5,3,3,3" Click="ApplyAlignAllBtn_Click"/>
 
-                                <Border Grid.Column="1" Background="#f9f9f9" Margin="4,4.5,0,4.5" >
+                                <Border Grid.Column="2" Background="#f9f9f9" Margin="4,4.5,0,4.5" >
                                     <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="Вирівнювання по:"/>
                                 </Border>
 
-                                <StackPanel Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Center" >
-                                    <ComboBox x:Name="AlignmentComboBox" SelectedIndex="0" Margin="3,0,3,0" SelectionChanged="CropAlignmentComboBox_SelectionChanged" IsEnabled="False">
+                                <StackPanel Grid.Column="3" HorizontalAlignment="Stretch" VerticalAlignment="Center" >
+                                    <ComboBox x:Name="AlignmentComboBox" SelectedIndex="0" Margin="3,0,3,0" SelectionChanged="CropAlignmentComboBox_SelectionChanged" IsEnabled="True">
                                         <ComboBoxItem Content="Центру"/>
                                         <ComboBoxItem Content="Верх"/>
                                         <ComboBoxItem Content="Низ"/>

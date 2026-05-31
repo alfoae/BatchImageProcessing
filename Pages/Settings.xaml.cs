@@ -431,18 +431,62 @@ namespace ImageProcessing
 
         
 
-        private void AlignmentSwitch_Click(object sender, RoutedEventArgs e)
+        private void ApplyAlignCurrentBtn_Click(object sender, RoutedEventArgs e)
         {
             if (_isUpdatingUI) return;
 
-            IsCropAlignmentOn = AlignmentSwitch.IsChecked == true;
-            AlignmentSwitch.Content = IsCropAlignmentOn ? "ON" : "OFF";
-            AlignmentComboBox.IsEnabled = IsCropAlignmentOn;
+            IsCropAlignmentOn = true;
+            RecalculateCropAlignment();
+            IsCropAlignmentOn = false;
+        }
 
-            if (IsCropAlignmentOn)
+        private void ApplyAlignAllBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isUpdatingUI) return;
+
+            int w = CurrentCrop.Width;
+            int h = CurrentCrop.Height;
+            if (w <= 0 || h <= 0) return;
+
+            var files = _imageFiles.ToList();
+            foreach (var file in files)
             {
-                RecalculateCropAlignment();
+                try
+                {
+                    int imgW, imgH;
+                    using (var bmp = new System.Drawing.Bitmap(file))
+                    {
+                        imgW = bmp.Width;
+                        imgH = bmp.Height;
+                    }
+
+                    int cw = w > imgW ? imgW : w;
+                    int ch = h > imgH ? imgH : h;
+
+                    int refX = 0, refY = 0;
+                    switch (CropAlignmentIndex)
+                    {
+                        case 0: refX = (imgW - cw) / 2; refY = (imgH - ch) / 2; break;
+                        case 1: refX = (imgW - cw) / 2; refY = 0;               break;
+                        case 2: refX = (imgW - cw) / 2; refY = imgH - ch;       break;
+                        case 3: refX = 0;               refY = (imgH - ch) / 2; break;
+                        case 4: refX = imgW - cw;       refY = (imgH - ch) / 2; break;
+                        case 5: refX = 0;               refY = 0;               break;
+                        case 6: refX = imgW - cw;       refY = 0;               break;
+                        case 7: refX = 0;               refY = imgH - ch;       break;
+                        case 8: refX = imgW - cw;       refY = imgH - ch;       break;
+                    }
+
+                    int cx = (int)Math.Round((refX + cw / 2.0) - imgW / 2.0);
+                    int cy = (int)Math.Round((refY + ch / 2.0) - imgH / 2.0);
+                    _imageCrops[file] = new Int32Rect(cx, cy, cw, ch);
+                }
+                catch { }
             }
+
+            IsCropAlignmentOn = true;
+            RecalculateCropAlignment();
+            IsCropAlignmentOn = false;
         }
 
         private void WMAlignmentComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -473,7 +517,7 @@ namespace ImageProcessing
 
         private void UpdateAlignmentUIState()
 {
-    if (AlignmentSwitch == null || AlignmentComboBox == null) return;
+    if (AlignmentComboBox == null) return;
 
     bool isEnabled = IsCropAlignmentOn;
     int selectedIndex = CropAlignmentIndex;
@@ -481,9 +525,6 @@ namespace ImageProcessing
     bool previouslyUpdating = _isUpdatingUI;
     _isUpdatingUI = true;
 
-    AlignmentSwitch.IsChecked = isEnabled;
-    AlignmentSwitch.Content = isEnabled ? "ON" : "OFF";
-    AlignmentComboBox.IsEnabled = isEnabled;
     AlignmentComboBox.SelectedIndex = selectedIndex;
 
     _isUpdatingUI = previouslyUpdating;
@@ -540,6 +581,9 @@ namespace ImageProcessing
 
                 IsGlobalCropPosition = true;
                 OneAlignmentCheck.Content = "ON";
+
+                ApplyAlignCurrentBtn.IsEnabled = false;
+                ApplyAlignAllBtn.IsEnabled = false;
             }
             else
             {
@@ -547,6 +591,10 @@ namespace ImageProcessing
                 OneAlignmentCheck.Content = "OFF";
 
                 CopyGlobalPositionToAllImages();
+
+                // Re-enable alignment buttons
+                ApplyAlignCurrentBtn.IsEnabled = true;
+                ApplyAlignAllBtn.IsEnabled = true;
             }
 
             _isInitializing = true;
@@ -1258,6 +1306,7 @@ namespace ImageProcessing
             if (_isInitializing || _isUpdatingUI) return;
 
             ToggleSameIdAlignment.Content = "ON";
+            IsSameIdAlignmentOn = true;
 
             var layers = GetCurrentPhotoLayers();
             int selectedIndex = MyComboBoxN1.SelectedIndex;
@@ -1277,12 +1326,44 @@ namespace ImageProcessing
                 if (photoPath == currentFile) continue;
 
                 var sameLayer = ImageWatermarks[photoPath]
-                    .FirstOrDefault(l => l.IsGlobal && l.GlobalOrder == activeLayer.GlobalOrder);
+                    .FirstOrDefault(l => l.IsGlobal && l.Id == activeLayer.Id && l.OriginalPhotoPath == activeLayer.OriginalPhotoPath);
 
                 if (sameLayer != null)
                 {
-                    sameLayer.X = sourceX;
-                    sameLayer.Y = sourceY;
+                    try
+                    {
+                        if (System.IO.File.Exists(currentFile) && System.IO.File.Exists(photoPath))
+                        {
+                            using var srcBmp = new System.Drawing.Bitmap(currentFile);
+                            using var dstBmp = new System.Drawing.Bitmap(photoPath);
+
+                            double srcW = srcBmp.Width;
+                            double srcH = srcBmp.Height;
+                            double dstW = dstBmp.Width;
+                            double dstH = dstBmp.Height;
+
+                            if (srcW > 0 && srcH > 0)
+                            {
+                                sameLayer.X = sourceX * (dstW / srcW);
+                                sameLayer.Y = sourceY * (dstH / srcH);
+                            }
+                            else
+                            {
+                                sameLayer.X = sourceX;
+                                sameLayer.Y = sourceY;
+                            }
+                        }
+                        else
+                        {
+                            sameLayer.X = sourceX;
+                            sameLayer.Y = sourceY;
+                        }
+                    }
+                    catch
+                    {
+                        sameLayer.X = sourceX;
+                        sameLayer.Y = sourceY;
+                    }
 
                     ApplyWatermarkAlignment(sameLayer, isDragging: false, photoPath: photoPath);
                 }
@@ -1575,7 +1656,7 @@ namespace ImageProcessing
             int candidateId = 1;
             if (layers != null)
             {
-                while (layers.Any(l => (l.Id - 1) == candidateId && (currentLayer == null || l != currentLayer)))
+                while (layers.Any(l => l.Id == candidateId && (currentLayer == null || l != currentLayer)))
                 {
                     candidateId++;
                 }
