@@ -869,7 +869,7 @@
                                 <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                                    <Border Grid.Row="1" Grid.Column="0" Background="#f9f9f9" Margin="4,4.8,4,4.8" >
+                            <Border Grid.Row="1" Grid.Column="0" Background="#f9f9f9" Margin="4,4.8,4,4.8" >
                                 <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Кількість потоків:"/>
                             </Border>
 
@@ -886,7 +886,7 @@
                                 <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            
+
                             <Border Grid.Row="2" Grid.Column="0" Background="#f9f9f9" Margin="4,4.8,4,4.8" >
                                 <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Назва Редагування:"/>
                             </Border>
@@ -905,7 +905,7 @@
                                 <ColumnDefinition Width="60"/>
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
-                            
+
                             <Border Grid.Row="0" Grid.Column="0" Background="#f9f9f9" Margin="4,3,1.5,3">
                                 <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Users:"/>
                             </Border>
@@ -927,8 +927,8 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
-                            
-                            
+
+
                             <Border Grid.Row="0" Background="#f9f9f9" Margin="4,3,1.5,3">
                                 <TextBlock Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Змінити імя та пороль:"/>
                             </Border>
@@ -956,39 +956,5 @@
                 <Border Background="#545454" BorderThickness="0" CornerRadius="10, 10, 0, 0" VerticalAlignment="Center" Height="50"/>
             </Grid>
         </Border>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     </Grid>
 </Page>

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace ImageProcessing.Models
 {
     public class WatermarkLayerSnapshot
